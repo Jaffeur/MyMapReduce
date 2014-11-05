@@ -92,9 +92,10 @@ public class Main {
 	
 	//TODO envoyer sur des machines distantes, créer un dictionnaire avec les machines et les fichiers dessus
 	public static void map_reduce_job(String input) throws IOException, InterruptedException {
-		ArrayList<Text_Spliter> splited_text = new ArrayList<Text_Spliter>();  
+		ArrayList<Split_Mapping> mappeurs = new ArrayList<Split_Mapping>();  
+		ArrayList<Reduce_Map> reducers = new ArrayList<Reduce_Map>();  
 		ArrayList<String> ums = new ArrayList<String>(); //liste des fichiers um //TODO ajouter les machines correspondantes
-		HashMap<String, String> word_um = new HashMap<String, String>();  //liste des "ichiers" UM associés à un mot 
+		HashMap<String, ArrayList<String>> word_um = new HashMap<String, ArrayList<String>>();  //liste des "ichiers" UM associés à un mot 
 		
 		FileReader fr = new FileReader(input);
 		BufferedReader br = new BufferedReader(fr);
@@ -109,19 +110,23 @@ public class Main {
 			ums.add(f.getAbsolutePath());
 			
 			//traitement dans les threads
-			Text_Spliter ts = new Text_Spliter(line, f.getAbsolutePath());
+			Split_Mapping ts = new Split_Mapping(line, f.getAbsolutePath());
 			ts.start();
-			splited_text.add(ts);
-			
+			mappeurs.add(ts);
 			n++;
 		}
 		
-		for(Text_Spliter th : splited_text){
+		for(Split_Mapping th : mappeurs){
 			th.join();
 			th.write_um();
 		}
 		
-		//remplir le dictionnaire clé/ums
+		br.close();
+		fr.close();
+		
+		
+		
+		//remplir le dictionnaire clé/ums //pré-shuffling
 		for( String um : ums){
 			FileReader fr2 = new FileReader(um);
 			BufferedReader br2 = new BufferedReader(fr2);
@@ -129,10 +134,32 @@ public class Main {
 			String line2 = "";
 			while( (line = br2.readLine()) != null){
 				String key = line.split("\\s+")[0];
-				if( word_um.containsKey(key))
+				if (!word_um.containsKey(key)){
+					ArrayList<String> a = new ArrayList<String>();
+					a.add(um);
+					word_um.put(key, a);
+				}else if(!word_um.get(key).contains(um)){
+					word_um.get(key).add(um);
+				}
+
 			}
+			br2.close();
+			fr2.close();
+		}
+		
 			
-			
+		//shuffling
+		for( String key: word_um.keySet()){
+			File f = new File("result.txt");
+			f.createNewFile();
+			Reduce_Map rm = new Reduce_Map(word_um.get(key), key, f.getAbsolutePath());
+			rm.start();
+			reducers.add(rm);
+		}
+		
+		for(Reduce_Map rm : reducers){
+			rm.join();
+			rm.write_res();
 		}
 		
 	}
