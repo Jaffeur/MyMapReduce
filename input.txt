@@ -1,4 +1,4 @@
 la lettre M désigne souvent un ensemble. C'est notamment ce que suppose la présentation formelle donnée plus haut.
 Une théorie trop naïve des ensembles conduisant à des paradoxes fameux, il est parfois utile de considérer une relation 
 d'appartenance d'un élément x à un objet M qui n'est pas un ensemble mais une classe. C'est par exemple le cas en théorie des catégories ;
- dans ce contexte on appelle toutefois x un « objet » plutôt qu'un « élément ».
+ dans ce contexte on appelle toutefois x un « objet » la plutôt qu'un « élément ».

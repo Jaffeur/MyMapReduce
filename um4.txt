@@ -10,6 +10,7 @@ appelle 1
 » 1
 ». 1
 objet 1
+la 1
 qu'un 1
 on 1
 ce 1
