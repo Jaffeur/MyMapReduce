@@ -1,15 +1,16 @@
 package local_shavadoop;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import reduce_shavadoop.Reduce_Map;
 
 
 /**
@@ -19,9 +20,11 @@ import reduce_shavadoop.Reduce_Map;
 
 public class Main {
 	
+	private int numLine;
 	private ArrayList<String> liste_machines_dist;
 	
-	public Main() {
+	public Main(int n) {
+		this.numLine = n;
 		this.liste_machines_dist = new ArrayList<String>();
 	}
 	
@@ -30,11 +33,13 @@ public class Main {
 	 * @throws InterruptedException 
 	 * **/
 	public static void main(String[] args) throws IOException, InterruptedException{
-		Main main = new Main();
+		long start = System.currentTimeMillis();
+		Main main = new Main(6);  //argument is the number of line to read
 		String file = "./liste_pc"; //where we will write and read our @IP 
-		String command = "ls -l";
 		main.getMachinesIP(file);  //get all neigbourg machines IP adress
 		main.map_reduce_job("input.txt");
+		long end = System.currentTimeMillis();
+		System.out.println("MAP REDUCE FINISHED in " + (end - start) + " ms");
 	}
 		
 	
@@ -47,24 +52,23 @@ public class Main {
 		String regex = "[0-9]{3}.[0-9]{3}.([0-9]{2}|[0-9]{3}).([0-9]{3}|[0-9]{2}|[0-9])";
 		Pattern pattern = Pattern.compile(regex);
 		
-		//String a = "arp -a | awk {split($2,a,"("); split(a[2],b,\")\"); print b[1] }'"; //commande de recherche de voisins bis
+		//String myIP = InetAddress.getLocalHost().getHostAddress();
 		String command = "nmap -sP 137.194.35.0/24";
 		Process p = Runtime.getRuntime().exec(command);  //executer commande qui va découvrir les pc dans le réseau
 		BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream())); 
 		
 		String line = "";
-		System.out.println("Liste des machines disponibles dans le réseau: ");
+		//System.out.println("Liste des machines disponibles dans le réseau: ");
 		while((line = reader.readLine())!= null){
 			Matcher matcher = pattern.matcher(line);  //récupère l'adresse ip avec un regex
 			if (matcher.find()){
-				System.out.println(matcher.group());
+				//System.out.println(matcher.group());
 				this.liste_machines_dist.add(matcher.group());
 			}
 		}
 		System.out.println("Nombres total de machines disponibles: " + liste_machines_dist.size());
 		reader.close();
 	}
-	
 	
 	
 	/**
@@ -89,7 +93,19 @@ public class Main {
 		//pour chaque ligne on split et on fait traiter par un thread //une machine puis on remplir les tables
 		String line = "";
 		int n = 1;
-		while((line = br.readLine()) != null){
+		boolean stopReading = false;
+		while(!stopReading){
+			
+			//read as many lines as asked
+			String text = "";
+			for(int i=0; i<this.numLine; i++){
+				if( (line = br.readLine()) == null){
+					stopReading = true;
+					break;
+				}
+				text += " " + line;
+			}
+			
 			//créer un fichier um en l'enregistrer
 			File f = new File("um"+n+".txt");
 			f.createNewFile();
@@ -98,26 +114,26 @@ public class Main {
 			//traitement dans les threads
 			String ip = this.liste_machines_dist.get((n-1)%liste_machines_dist.size());  //on liste les adresses IP les unes après les autres et si la liste est finie on recommence au début
 			String jar_path = "/cal/homes/adupont/workspace/SSH_client/Split_Mapping.jar";
-			Parallelize par = new Parallelize(ip, jar_path, f.getAbsolutePath(), line);
+			Parallelize par = new Parallelize(ip, jar_path, f.getAbsolutePath(), text);
 			par.start();
 			mappeurs.add(par);
 			n++;
 		}
 		
+		//on attends la fin de l'execution des mappeurs
 		for(Parallelize par : mappeurs){
-			par.join();
+			par.join(10000);
+			par.stop_me();
 			dics.fill_with_mots(par.get_file_path());  //remplir le dictionnaire
 		}
-		
 		br.close();
 		fr.close();
-		
-		
 		
 		
 			
 		//shuffling
 		File f = new File("result.txt");
+		f.delete();
 		f.createNewFile();
 		int n2 = 1;
 		for( String key: dics.get_mots_dans_um().keySet()){
@@ -129,9 +145,13 @@ public class Main {
 		}
 		
 		for(Parallelize par : reducers){
-			par.join();
+			par.join(10000);
+			par.stop_me();
 		}
-		
+		for(String um : ums){
+			File f2 = new File(um);
+			f2.delete();
+		}
 	}
 }
 

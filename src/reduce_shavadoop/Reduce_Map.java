@@ -2,13 +2,14 @@ package reduce_shavadoop;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 
-public class Reduce_Map extends Thread{
+public class Reduce_Map{
 	ArrayList<String> ums;
 	String word, result_file;
 	int count;
@@ -21,7 +22,7 @@ public class Reduce_Map extends Thread{
 	}
 	
 	public void reduce() throws IOException{
-		for( String um : ums){
+		for( String um : this.ums){
 			try{
 				FileReader fr = new FileReader(um);
 				BufferedReader bf = new BufferedReader(fr);
@@ -30,7 +31,6 @@ public class Reduce_Map extends Thread{
 					String l[] = line.split("\\s+");
 					String key = l[0];
 					int n = Integer.parseInt(l[1]);
-					System.out.println(word+" " +key + " " + n);
 					if (key.equals(this.word)){
 						this.count += n;
 					}
@@ -45,13 +45,10 @@ public class Reduce_Map extends Thread{
 		FileWriter fr = new FileWriter(result_file, true);
 		fr.append(this.word + " " + this.count);
 		fr.append(System.getProperty("line.separator"));
-		//fr.flush();
-		/*pw.close();
-		bw.close();*/
 		fr.close();
 	}
 	
-	public static void main(String args[]){
+	public static void main(String args[]) throws IOException{
 		String result_file = args[0];
 		String word = args[1];
 		String files="";
@@ -63,6 +60,7 @@ public class Reduce_Map extends Thread{
 			um_files.add(file);
 		}
 		Reduce_Map rm = new Reduce_Map(um_files, word, result_file);
+		rm.reduce();
 	}
 	
 }

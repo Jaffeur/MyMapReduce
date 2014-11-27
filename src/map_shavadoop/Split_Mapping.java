@@ -3,7 +3,6 @@ package map_shavadoop;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream.GetField;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -29,6 +28,11 @@ public class Split_Mapping{
 	public void split() throws IOException{
 		String table []= text.split("\\s+");
 		for (String word : table){
+			try{
+				word = word.replaceAll("\\P{L}+", "").toLowerCase();  //remove specific caracter and lower case
+			}catch(Exception e){
+				System.out.println(e);
+			}
 			if(words_map.containsKey(word)) words_map.put(word, words_map.get(word)+1);
 			else words_map.put(word, 1);
 		}

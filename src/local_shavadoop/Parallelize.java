@@ -33,10 +33,12 @@ public class Parallelize extends Thread{
 	private String ip;
 	private String command;
 	private String file;
+	private boolean finished = false;
+	private boolean error = false;
 	
 	//constructeur mappeurs
 	public Parallelize(String ip,String jar_path, String file, String line){
-		System.out.println("New Parallelization");
+		System.out.println("New mapper");
 		this.ip = ip;
 		this.file = file;
 		this.command = "java -cp " + jar_path + " map_shavadoop.Split_Mapping " + file + " " + "\"" + line + "\""; 
@@ -44,63 +46,73 @@ public class Parallelize extends Thread{
 	
 	//constructeur reducer
 	public Parallelize(String ip, ArrayList<String> files, String word, String file, String jar_path){
+		System.out.println("New reducer");
 		this.ip = ip;
 		this.file = file;
 		String list_files = "";
 		for (int i = 0; i<files.size(); i++){
 			list_files += " " + files.get(i) ;
 		}
-		this.command = "java -cp " + jar_path + " reduce_shavadoop.Reduce_Map " + file + " " + word + list_files;
+		this.command = "java -cp " + jar_path + " reduce_shavadoop.Reduce_Map " + file + " " + word + " " + list_files;
+	}
+	
+	public boolean stop_me(){
+		if(this.error){
+			this.finished = true;
+		}
+		return this.error;
 	}
 	
 	
 	public void run(){
-		parallelize();
-	}
-	
-	public void parallelize(){
-		System.out.println(this.command);
-		String private_key_repository = "/cal/homes/adupont/.ssh/id_dsa";  //dossier de clée pour l'authentification
-		String user = "adupont";
 		
-		try{
-			//create session
-			JSch jsch = new JSch();  //create new configuration for session
-			jsch.addIdentity(private_key_repository, "passphrase"); // Associer clé à la session jsch
-			Session session = jsch.getSession(user, this.ip, 22); //Créer nouvelle session, port 22 = ssh
+		while(!finished){
+			String private_key_repository = "/cal/homes/adupont/.ssh/id_dsa";  //dossier de clée pour l'authentification
+			String user = "adupont";
 			
-			//To avoid Pop UPs
-			java.util.Properties config = new java.util.Properties();
-			config.put("StrictHostKeyChecking", "no");
-			session.setConfig(config);
-			
-			//param session
-			UserInfo ui = new MyUserInfo();
-			session.setUserInfo(ui); //link session to a user
-			session.connect(); //connection!
-			
-			//execut command
-			Channel channel = session.openChannel("exec");
-			((ChannelExec) channel).setCommand(this.command);	
-			
-			//*get result
-			channel.setInputStream(null);
-			((ChannelExec)channel).setErrStream(System.err);
-			InputStream in=channel.getInputStream();
-			channel.connect();  //connexion
-			
-			
-			//Show result on terminal
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String inputLine;
-			while ((inputLine = br.readLine()) != null)
-			    System.out.println("@" + this.ip + "#\t" + inputLine);
-			in.close();
-			
-		}catch(Exception e){
-			System.out.println("@" + this.ip + " error:#\t");
-			System.out.println(e);
+			try{
+				//create session
+				JSch jsch = new JSch();  //create new configuration for session
+				jsch.addIdentity(private_key_repository, "passphrase"); // Associer clé à la session jsch
+				Session session = jsch.getSession(user, this.ip, 22); //Créer nouvelle session, port 22 = ssh
+				
+				//To avoid Pop UPs
+				java.util.Properties config = new java.util.Properties();
+				config.put("StrictHostKeyChecking", "no");
+				session.setConfig(config);
+				
+				//param session
+				UserInfo ui = new MyUserInfo();
+				session.setUserInfo(ui); //link session to a user
+				session.connect(); //connection!
+				
+				//execut command
+				Channel channel = session.openChannel("exec");
+				((ChannelExec) channel).setCommand(this.command);	
+				
+				//*get result
+				channel.setInputStream(null);
+				((ChannelExec)channel).setErrStream(System.err);
+				InputStream in=channel.getInputStream();
+				channel.connect();  //connexion
+				
+				
+				//Show result on terminal
+				BufferedReader br = new BufferedReader(new InputStreamReader(in));
+				String inputLine;
+				while ((inputLine = br.readLine()) != null)
+				    System.out.println("@" + this.ip + "#\t" + inputLine);
+				in.close();
+				this.finished = true;
+				
+			}catch(Exception e){
+				System.out.println("@" + this.ip + " error:#\t");
+				System.out.println(e);
+				this.error = true;
+				this.finished = true;
+			}
 		}
+		
 	}
 	
 	public String get_file_path(){
