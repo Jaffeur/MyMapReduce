@@ -1,4 +1,4 @@
- ## Projet SHAVADOOP
+ # Projet SHAVADOOP
 Implementation de Map Reduce en Java
 
  
@@ -35,9 +35,9 @@ Le projet est divisé en plusieurs packages:
 - map_shavadoop: le package qui comprend toutes les classes utilisées par les slaves Mappers
 - reduce_shavadoop: le package qui comprend toutes les classes utilisées par les slaves Reducers
 
-# local_shavadoop
-# map_shvadoop
-# reduce_shavadoop
+### local_shavadoop
+### map_shvadoop
+### reduce_shavadoop
 
 ## 5.  Bugs / Améliorations possibles
 
