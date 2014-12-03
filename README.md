@@ -1,4 +1,4 @@
- # Projet SHAVADOOP
+# Projet SHAVADOOP #
  
 Implementation de Map Reduce en Java
 
@@ -29,6 +29,10 @@ main.map_reduce_job(X);  avec X le chemin d'accès vers le fichier (une chaine d
 - Pour choisir le fichier dans lequel on écrira les résultats, il faut modifier dans la méthode map_reduce_job() ligne 156:
 File f = new File(X);  avec X le chemin d'accès vers le fichier (une chaine de caractères String)
 
+- Il faut modifier les répertoires où les machines distantes pourront trouver les .jar Map et Reduce à executer (via commande bash avec ssh)
+ligne 146: 	String jar_path = X; avec X le chemin d'accès vers le fichier Split_Mapping.jar (une chaine de caractères String) 
+ligne 171: 	String jar_path = X; avec X le chemin d'accès vers le fichier Reduce_Map.jar (une chaine de caractères String) 
+
 ## 4.  Documentation Développeur
 
 Le projet est divisé en plusieurs packages:
@@ -36,9 +40,17 @@ Le projet est divisé en plusieurs packages:
 - map_shavadoop: le package qui comprend toutes les classes utilisées par les slaves Mappers
 - reduce_shavadoop: le package qui comprend toutes les classes utilisées par les slaves Reducers
 
-### local_shavadoop
-### map_shvadoop
-### reduce_shavadoop
+### 4.1 local_shavadoop
+
+####- Classe Main
+
+- Classe Parallelize
+- Classe Dictionnaires
+
+- Classe Comparator
+
+### 4.2 map_shvadoop
+### 4.3 reduce_shavadoop
 
 ## 5.  Bugs / Améliorations possibles
 
