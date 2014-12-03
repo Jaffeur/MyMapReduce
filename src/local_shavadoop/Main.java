@@ -7,10 +7,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.RowFilter.Entry;
 
 
 /**
@@ -34,15 +37,42 @@ public class Main {
 	 * **/
 	public static void main(String[] args) throws IOException, InterruptedException{
 		long start = System.currentTimeMillis();
-		Main main = new Main(6);  //argument is the number of line to read
+		Main main = new Main(1000);  //argument is the number of line to read
 		String file = "./liste_pc"; //where we will write and read our @IP 
 		main.getMachinesIP(file);  //get all neigbourg machines IP adress
 		main.map_reduce_job("input.txt");
 		long end = System.currentTimeMillis();
 		System.out.println("MAP REDUCE FINISHED in " + (end - start) + " ms");
+		main.word_sort("./result.txt");
 	}
 		
-	
+	public void word_sort(String file) throws IOException{
+		FileReader fr = new FileReader(file);
+		BufferedReader br = new BufferedReader(fr);
+		Map<String, Integer> smap = new HashMap<String, Integer>();
+		ValueComparator bvc =  new ValueComparator(smap);
+		TreeMap<String,Integer> sorted_map = new TreeMap<String,Integer>(bvc);
+		
+		String line = "";
+		while((line = br.readLine()) != null){
+			String d[] = line.split("\\s+");
+			smap.put(d[0], Integer.parseInt(d[1]));
+		}
+		br.close();
+		fr.close();
+		System.out.println("Sorting...");
+		sorted_map.putAll(smap);
+		System.out.println("Sorting finished");
+		
+		FileWriter fw = new FileWriter(file);
+		BufferedWriter bw = new BufferedWriter(fw);
+		for(java.util.Map.Entry<String, Integer> e : sorted_map.entrySet()){
+			bw.write(e.getKey() + "\t" + e.getValue());
+			bw.newLine();
+		}
+		bw.close();
+		fw.close();
+	}
 	
 	/**
 	 * method to get IP adresses of all neigbourg machines
@@ -142,6 +172,7 @@ public class Main {
 			Parallelize par = new Parallelize(ip, dics.get_mots_dans_um().get(key), key, f.getAbsolutePath(), jar_path);
 			par.start();
 			reducers.add(par);
+			n2++;
 		}
 		
 		for(Parallelize par : reducers){
